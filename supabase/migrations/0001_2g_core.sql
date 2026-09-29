@@ -1,4 +1,5 @@
 create extension if not exists "uuid-ossp";
+create extension if not exists btree_gist;
 create type appointment_status as enum ('pending','confirmed','checked_in','in_service','completed','cancelled','no_show');
 create table services(id uuid primary key default uuid_generate_v4(),slug text unique not null,name text not null,category text not null,duration_minutes int not null check(duration_minutes>0),price_etb numeric(10,2) not null check(price_etb>=0),description text,active boolean default true,created_at timestamptz default now());
 create table barbers(id uuid primary key default uuid_generate_v4(),slug text unique not null,name text not null,bio text,specialties text[],active boolean default true,created_at timestamptz default now());
