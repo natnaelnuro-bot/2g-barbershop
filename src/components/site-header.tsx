@@ -1,0 +1,4 @@
+import Link from "next/link";
+export function Brand() { return <Link href="/" className="brand" aria-label="2G Barbershop home"><span>2</span>G<small>BARBERSHOP</small></Link> }
+export function SiteHeader() { return <header className="site-header"><Brand /><nav><Link href="/services">Services</Link><Link href="/barbers">Barbers</Link><Link href="/vip">VIP</Link><Link href="/gallery">Gallery</Link><Link href="/contact">Contact</Link></nav><Link className="book-button" href="/book">Book now <span>↗</span></Link></header> }
+export function Footer() { return <footer><div><Brand /><p>Premium men&apos;s grooming in Addis Ababa.</p></div><div><p className="eyebrow">VISIT 2G</p><p>Bole, Addis Ababa<br/>Mon–Sat · 9:00–20:00</p></div><div><p className="eyebrow">CONTACT</p><p>+251 91 234 5678<br/>hello@2gbarbershop.et</p></div></footer> }

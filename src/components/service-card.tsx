@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { Service, money } from "@/lib/data";
+export function ServiceCard({ service }: { service: Service }) { return <article className="service-card"><div className="image" style={{backgroundImage:`url(${service.image})`}}/><div className="card-copy"><p className="eyebrow">{service.category}</p><h3>{service.name}</h3><p>{service.description}</p><div className="service-meta"><span>{service.duration} min</span><strong>{money(service.price)}</strong></div><Link href={`/book?service=${service.id}`} className="text-link">Book this service <span>→</span></Link></div></article> }

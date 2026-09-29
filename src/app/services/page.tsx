@@ -1,0 +1,2 @@
+import { SiteHeader, Footer } from "@/components/site-header"; import { ServiceCard } from "@/components/service-card"; import { services } from "@/lib/data";
+export default function Services(){return <><SiteHeader/><main className="page"><div className="page-head"><p className="eyebrow">OUR MENU</p><h1>Grooming, considered.</h1><p>Every service begins with a conversation and ends with a finish made to last.</p></div><div className="service-grid">{services.map(s=><ServiceCard key={s.id} service={s}/>)}</div></main><Footer/></>}
