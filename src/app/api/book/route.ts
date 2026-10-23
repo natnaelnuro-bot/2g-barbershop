@@ -10,7 +10,33 @@ export async function POST(request: Request) {
   if (!hasSupabaseServiceRole()) return NextResponse.json({ error: "Online booking is being configured. Please call 2G to book." }, { status: 503 });
 
   const reference = `2G-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  const result = await supabaseRpc("create_appointment", { p_service_slug: body.service, p_barber_slug: body.barber, p_customer_name: body.name.trim(), p_customer_phone: body.phone.trim(), p_customer_email: String(body.email ?? "").trim(), p_notes: String(body.notes ?? "").trim(), p_start_at: `${body.date}T${body.time}:00+03:00`, p_reference: reference });
-  if (!result.ok) return NextResponse.json({ error: "That time is no longer available. Please choose another slot." }, { status: 409 });
-  return NextResponse.json({ reference }, { status: 201 });
+  try {
+    const result = await supabaseRpc("create_appointment", {
+      p_service_slug: body.service,
+      p_barber_slug: body.barber,
+      p_customer_name: body.name.trim(),
+      p_customer_phone: body.phone.trim(),
+      p_customer_email: String(body.email ?? "").trim(),
+      p_notes: String(body.notes ?? "").trim(),
+      p_start_at: `${body.date}T${body.time}:00+03:00`,
+      p_reference: reference,
+    });
+    const responseBody = await result.text();
+    if (!result.ok) {
+      console.error("Booking creation failed", { status: result.status, body: responseBody });
+      const databaseMessage = (() => {
+        try { return JSON.parse(responseBody).message as string | undefined; } catch { return undefined; }
+      })();
+      const knownError = ["Service unavailable", "No barber available", "This time is outside our booking hours"]
+        .find((message) => databaseMessage?.includes(message));
+      return NextResponse.json(
+        { error: knownError ?? "That time is no longer available. Please choose another slot." },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json({ reference }, { status: 201 });
+  } catch (error) {
+    console.error("Booking request failed", error);
+    return NextResponse.json({ error: "Could not create your booking. Please try again." }, { status: 503 });
+  }
 }
