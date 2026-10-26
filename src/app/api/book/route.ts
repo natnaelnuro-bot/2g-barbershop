@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { hasSupabaseServiceRole, supabaseRpc } from "@/lib/supabase-server";
+import { notifyTelegramOfBooking } from "@/lib/telegram";
+import { barbers, services } from "@/lib/data";
 
 const required = ["service", "barber", "date", "time", "name", "phone"];
 
@@ -34,6 +36,27 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
+    const serviceName = services.find((service) => service.id === body.service)?.name ?? body.service;
+    const barberName = body.barber === "any"
+      ? "Any available barber"
+      : barbers.find((barber) => barber.id === body.barber)?.name ?? body.barber;
+
+    // Telegram must never prevent a confirmed booking from reaching the guest.
+    try {
+      await notifyTelegramOfBooking({
+        reference,
+        service: serviceName,
+        barber: barberName,
+        date: body.date,
+        time: body.time,
+        customerName: body.name.trim(),
+        customerPhone: body.phone.trim(),
+        notes: String(body.notes ?? "").trim(),
+      });
+    } catch (error) {
+      console.error("Telegram booking notification crashed", error);
+    }
+
     return NextResponse.json({ reference }, { status: 201 });
   } catch (error) {
     console.error("Booking request failed", error);
