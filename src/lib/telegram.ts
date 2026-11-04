@@ -11,8 +11,14 @@ type BookingNotification = {
 
 export async function notifyTelegramOfBooking(booking: BookingNotification) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) return { configured: false };
+  const chatIds = [
+    process.env.TELEGRAM_CHAT_ID,
+    ...(process.env.TELEGRAM_ADDITIONAL_CHAT_IDS?.split(",") ?? []),
+  ]
+    .map((chatId) => chatId?.trim())
+    .filter((chatId): chatId is string => Boolean(chatId));
+
+  if (!token || chatIds.length === 0) return { configured: false };
 
   const lines = [
     "New 2G Barbershop booking",
@@ -25,18 +31,27 @@ export async function notifyTelegramOfBooking(booking: BookingNotification) {
   ];
   if (booking.notes) lines.push(`Notes: ${booking.notes}`);
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text: lines.join("\n") }),
-  });
+  const responses = await Promise.all(
+    chatIds.map(async (chatId) => {
+      const response = await fetch(
+        `https://api.telegram.org/bot${token}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: lines.join("\n") }),
+        },
+      );
 
-  if (!response.ok) {
-    console.error("Telegram booking notification failed", {
-      status: response.status,
-      body: await response.text(),
-    });
-  }
+      if (!response.ok) {
+        console.error("Telegram booking notification failed", {
+          status: response.status,
+          body: await response.text(),
+        });
+      }
 
-  return { configured: true, sent: response.ok };
+      return response.ok;
+    }),
+  );
+
+  return { configured: true, sent: responses.every(Boolean) };
 }
